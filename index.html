@@ -1,0 +1,951 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>中学1年生 英単語テスト</title>
+    <!-- Tailwind CSS CDN -->
+    <script src="https://cdn.tailwindcss.com"></script>
+    <style>
+        /* Custom styles for Inter font and general layout */
+        body {
+            font-family: 'Inter', sans-serif;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            min-height: 100vh;
+            background-color: #f0f4f8; /* Light blue-gray background */
+            padding: 1rem; /* Add some padding for smaller screens */
+        }
+        .container {
+            max-width: 600px;
+            width: 100%;
+        }
+        /* Ensure input and button have consistent styling */
+        input[type="text"], button {
+            transition: all 0.2s ease-in-out;
+        }
+        input[type="text"]:focus {
+            outline: none;
+            box-shadow: 0 0 0 3px rgba(66, 153, 225, 0.5); /* Blue focus ring */
+        }
+    </style>
+</head>
+<body class="bg-gray-100 flex items-center justify-center min-h-screen p-4">
+    <div class="container bg-white p-8 rounded-xl shadow-lg text-center border border-gray-200">
+        <h1 class="text-3xl font-extrabold text-gray-800 mb-6">英単語テスト</h1>
+
+        <div class="mb-8">
+            <p class="text-xl text-gray-600 mb-2">この単語の意味は何でしょう？</p>
+            <div class="flex items-center justify-center gap-4 mb-6">
+                <p id="wordDisplay" class="text-5xl font-bold text-indigo-700 animate-pulse">Word</p>
+                <button
+                    id="playAudioButton"
+                    onclick="speakWord()"
+                    class="bg-blue-500 hover:bg-blue-600 text-white p-3 rounded-full shadow-md transform hover:scale-110 focus:outline-none focus:ring-4 focus:ring-blue-300 transition-all duration-200"
+                    aria-label="単語の音声を聞く"
+                >
+                    <!-- Speaker icon using SVG -->
+                    <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="currentColor" class="w-6 h-6">
+                        <path d="M11.5 2.049a1.5 1.5 0 0 1 1.5 0L14.4 3.5c.272.16.5.4.67.66L19 11.223V14.5a.5.5 0 0 1-.5.5c-1.11 0-2.164.28-3.116.795A13.902 13.902 0 0 1 12 17.55c-1.11 0-2.164-.28-3.116-.795A13.902 13.902 0 0 1 5.5 15a.5.5 0 0 1-.5-.5V11.223l4.33-7.062a1.5 1.5 0 0 1 1.84-.112ZM9.75 16.5a.75.75 0 1 0 0 1.5.75.75 0 0 0 0-1.5ZM12 19.5a.75.75 0 1 0 0 1.5.75.75 0 0 0 0-1.5ZM14.25 16.5a.75.75 0 1 0 0 1.5.75.75 0 0 0 0-1.5Z" />
+                    </svg>
+                </button>
+            </div>
+        </div>
+
+        <div class="mb-6">
+            <input
+                type="text"
+                id="answerInput"
+                placeholder="ここにひらがなで入力してください"
+                class="w-full p-4 text-lg border-2 border-gray-300 rounded-lg focus:border-indigo-500 text-gray-800"
+                onkeydown="if(event.key === 'Enter') checkAnswer();"
+            >
+        </div>
+
+        <div id="feedback" class="text-lg font-semibold mb-6 min-h-[2rem]"></div>
+
+        <div class="flex flex-col sm:flex-row justify-center gap-4">
+            <button
+                id="checkButton"
+                onclick="checkAnswer()"
+                class="bg-indigo-600 hover:bg-indigo-700 text-white font-bold py-3 px-8 rounded-lg shadow-md transform hover:scale-105 focus:outline-none focus:ring-4 focus:ring-indigo-300 transition-all duration-200"
+            >
+                解答を確認
+            </button>
+            <button
+                id="nextButton"
+                onclick="nextWord()"
+                class="bg-gray-300 hover:bg-gray-400 text-gray-800 font-bold py-3 px-8 rounded-lg shadow-md transform hover:scale-105 focus:outline-none focus:ring-4 focus:ring-gray-300 transition-all duration-200"
+            >
+                次の単語
+            </button>
+        </div>
+    </div>
+
+    <script>
+        // Define the list of words and their Japanese meanings
+        // Expanded to include common junior high school level words
+        const words = [
+            { english: "hello", japanese: "こんにちは" },
+            { english: "goodbye", japanese: "さようなら" },
+            { english: "thank you", japanese: "ありがとう" },
+            { english: "yes", japanese: "はい" },
+            { english: "no", japanese: "いいえ" },
+            { english: "apple", japanese: "りんご" },
+            { english: "book", japanese: "ほん" },
+            { english: "school", japanese: "がっこう" },
+            { english: "student", japanese: "せいと" },
+            { english: "teacher", japanese: "せんせい" },
+            { english: "cat", japanese: "ねこ" },
+            { english: "dog", japanese: "いぬ" },
+            { english: "house", japanese: "いえ" },
+            { english: "water", japanese: "みず" },
+            { english: "eat", japanese: "たべる" },
+            { english: "drink", japanese: "のむ" },
+            { english: "run", japanese: "はしる" },
+            { english: "study", japanese: "べんきょうする" },
+            { english: "play", japanese: "あそぶ" },
+            { english: "friend", japanese: "ともだち" },
+            { english: "morning", japanese: "あさ" },
+            { english: "evening", japanese: "ゆうがた" },
+            { english: "night", japanese: "よる" },
+            { english: "day", japanese: "ひ" },
+            { english: "happy", japanese: "しあわせな" },
+            { english: "sad", japanese: "かなしい" },
+            { english: "big", japanese: "おおきい" },
+            { english: "small", japanese: "ちいさい" },
+            { english: "new", japanese: "あたらしい" },
+            { english: "old", japanese: "ふるい" },
+            { english: "like", japanese: "～がすき" },
+            { english: "love", japanese: "～をあいする" },
+            { english: "want", japanese: "～がほしい" },
+            { english: "go", japanese: "いく" },
+            { english: "come", japanese: "くる" },
+            { english: "see", japanese: "みる" },
+            { english: "hear", japanese: "きく" },
+            { english: "speak", japanese: "はなす" },
+            { english: "read", japanese: "よむ" },
+            { english: "write", japanese: "かく" },
+            { english: "listen", japanese: "きく" },
+            { english: "walk", japanese: "あるく" },
+            { english: "talk", japanese: "はなす" },
+            { english: "think", japanese: "かんがえる" },
+            { english: "know", japanese: "しっている" },
+            { english: "make", japanese: "つくる" },
+            { english: "take", japanese: "とる" },
+            { english: "give", japanese: "あたえる" },
+            { english: "get", japanese: "える" },
+            { english: "use", japanese: "つかう" },
+            { english: "find", japanese: "みつける" },
+            { english: "tell", japanese: "つたえる" },
+            { english: "ask", japanese: "たずねる" },
+            { english: "work", japanese: "はたらく" },
+            { english: "live", japanese: "すむ" },
+            { english: "open", japanese: "あける" },
+            { english: "close", japanese: "しめる" },
+            { english: "begin", japanese: "はじめる" },
+            { english: "end", japanese: "おえる" },
+            { english: "finish", japanese: "おえる" },
+            { english: "start", japanese: "はじめる" },
+            { english: "buy", japanese: "かう" },
+            { english: "sell", japanese: "うる" },
+            { english: "bring", japanese: "もってくる" },
+            { english: "send", japanese: "おくる" },
+            { english: "show", japanese: "みせる" },
+            { english: "learn", japanese: "まなぶ" },
+            { english: "teach", japanese: "おしえる" },
+            { english: "help", japanese: "たすける" },
+            { english: "call", japanese: "よぶ" },
+            { english: "wait", japanese: "まつ" },
+            { english: "change", japanese: "かえる" },
+            { english: "move", japanese: "うごかす" },
+            { english: "turn", japanese: "まわる" },
+            { english: "stand", japanese: "たつ" },
+            { english: "sit", japanese: "すわる" },
+            { english: "sleep", japanese: "ねむる" },
+            { english: "wake up", japanese: "おきる" },
+            { english: "wash", japanese: "あらう" },
+            { english: "clean", japanese: "きれいにする" },
+            { english: "cook", japanese: "りょうりする" },
+            { english: "cut", japanese: "きる" },
+            { english: "draw", japanese: "えがく" },
+            { english: "sing", japanese: "うたう" },
+            { english: "dance", japanese: "おどる" },
+            { english: "swim", japanese: "およぐ" },
+            { english: "drive", japanese: "うんてんする" },
+            { english: "ride", japanese: "のる" },
+            { english: "fly", japanese: "とぶ" },
+            { english: "meet", japanese: "あう" },
+            { english: "visit", japanese: "おとずれる" },
+            { english: "travel", japanese: "りょこうする" },
+            { english: "stay", japanese: "たいざいする" },
+            { english: "feel", japanese: "かんじる" },
+            { english: "look", japanese: "みる" },
+            { english: "sound", japanese: "～にきこえる" },
+            { english: "taste", japanese: "～のあじがする" },
+            { english: "smell", japanese: "～のにおいがする" },
+            { english: "touch", japanese: "さわる" },
+            { english: "put", japanese: "おく" },
+            { english: "hold", japanese: "もつ" },
+            { english: "keep", japanese: "たもつ" },
+            { english: "leave", japanese: "さる" },
+            { english: "lose", japanese: "うしなう" },
+            { english: "win", japanese: "かつ" },
+            { english: "lose", japanese: "まける" }, // Note: "lose" can mean both lose (something) and lose (a game)
+            { english: "catch", japanese: "つかまえる" },
+            { english: "throw", japanese: "なげる" },
+            { english: "hit", japanese: "うつ" },
+            { english: "kick", japanese: "ける" },
+            { english: "jump", japanese: "とぶ" },
+            { english: "climb", japanese: "のぼる" },
+            { english: "fall", japanese: "おちる" },
+            { english: "break", japanese: "こわす" },
+            { english: "fix", japanese: "しゅうりする" },
+            { english: "build", japanese: "たてる" },
+            { english: "destroy", japanese: "はかいする" },
+            { english: "create", japanese: "そうぞうする" },
+            { english: "destroy", japanese: "はかいする" },
+            { english: "add", japanese: "くわえる" },
+            { english: "subtract", japanese: "ひく" },
+            { english: "multiply", japanese: "かける" },
+            { english: "divide", japanese: "わる" },
+            { english: "count", japanese: "かぞえる" },
+            { english: "measure", japanese: "はかる" },
+            { english: "explain", japanese: "せつめいする" },
+            { english: "describe", japanese: "びょうしゃする" },
+            { english: "remember", japanese: "おぼえている" },
+            { english: "forget", japanese: "わすれる" },
+            { english: "understand", japanese: "りかいする" },
+            { english: "believe", japanese: "しんじる" },
+            { english: "hope", japanese: "のぞむ" },
+            { english: "wish", japanese: "ねがう" },
+            { english: "dream", japanese: "ゆめをみる" },
+            { english: "plan", japanese: "けいかくする" },
+            { english: "decide", japanese: "きめる" },
+            { english: "choose", japanese: "えらぶ" },
+            { english: "agree", japanese: "どういする" },
+            { english: "disagree", japanese: "どういしない" },
+            { english: "accept", japanese: "うけいれる" },
+            { english: "refuse", japanese: "きょひする" },
+            { english: "allow", japanese: "ゆるす" },
+            { english: "forbid", japanese: "きんじる" },
+            { english: "borrow", japanese: "かりる" },
+            { english: "lend", japanese: "かす" },
+            { english: "pay", japanese: "しはらう" },
+            { english: "cost", japanese: "ひようがかかる" },
+            { english: "spend", japanese: "ついやす" },
+            { english: "save", japanese: "ためる" },
+            { english: "waste", japanese: "むだにする" },
+            { english: "earn", japanese: "かせぐ" },
+            { english: "collect", japanese: "あつめる" },
+            { english: "share", japanese: "きょうゆうする" },
+            { english: "mix", japanese: "まぜる" },
+            { english: "separate", japanese: "わける" },
+            { english: "join", japanese: "くわわる" },
+            { english: "connect", japanese: "つなぐ" },
+            { english: "disconnect", japanese: "つなぐのをやめる" },
+            { english: "push", japanese: "おす" },
+            { english: "pull", japanese: "ひく" },
+            { english: "carry", japanese: "はこぶ" },
+            { english: "wear", japanese: "きる" },
+            { english: "put on", japanese: "きる" },
+            { english: "take off", japanese: "ぬぐ" },
+            { english: "try on", japanese: "しちゃくする" },
+            { english: "wash", japanese: "あらう" },
+            { english: "dry", japanese: "かわかす" },
+            { english: "iron", japanese: "アイロンをかける" },
+            { english: "fold", japanese: "たたむ" },
+            { english: "hang", japanese: "かける" },
+            { english: "clean", japanese: "きれいな" },
+            { english: "dirty", japanese: "きたない" },
+            { english: "empty", japanese: "からの" },
+            { english: "full", japanese: "まんぱいの" },
+            { english: "heavy", japanese: "おもい" },
+            { english: "light", japanese: "かるい" },
+            { english: "long", japanese: "ながい" },
+            { english: "short", japanese: "みじかい" },
+            { english: "tall", japanese: "せがたかい" },
+            { english: "low", japanese: "ひくい" },
+            { english: "wide", japanese: "ひろい" },
+            { english: "narrow", japanese: "せまい" },
+            { english: "thick", japanese: "あつい" },
+            { english: "thin", japanese: "うすい" },
+            { english: "deep", japanese: "ふかい" },
+            { english: "shallow", japanese: "あさい" },
+            { english: "hot", japanese: "あつい" },
+            { english: "cold", japanese: "さむい" },
+            { english: "warm", japanese: "あたたかい" },
+            { english: "cool", japanese: "すずしい" },
+            { english: "bright", japanese: "あかるい" },
+            { english: "dark", japanese: "くらい" },
+            { english: "loud", japanese: "うるさい" },
+            { english: "quiet", japanese: "しずかな" },
+            { english: "fast", japanese: "はやい" },
+            { english: "slow", japanese: "おそい" },
+            { english: "early", japanese: "はやい" },
+            { english: "late", japanese: "おそい" },
+            { english: "easy", japanese: "かんたんな" },
+            { english: "difficult", japanese: "むずかしい" },
+            { english: "good", japanese: "よい" },
+            { english: "bad", japanese: "わるい" },
+            { english: "beautiful", japanese: "うつくしい" },
+            { english: "ugly", japanese: "みにくい" },
+            { english: "kind", japanese: "しんせつな" },
+            { english: "mean", japanese: "いじわるな" },
+            { english: "polite", japanese: "ていねいな" },
+            { english: "rude", japanese: "しつれいな" },
+            { english: "clever", japanese: "かしこい" },
+            { english: "stupid", japanese: "おろかな" },
+            { english: "strong", japanese: "つよい" },
+            { english: "weak", japanese: "よわい" },
+            { english: "rich", japanese: "ゆうふくな" },
+            { english: "poor", japanese: "まずしい" },
+            { english: "young", japanese: "わかい" },
+            { english: "old", japanese: "としおいた" },
+            { english: "alive", japanese: "いきている" },
+            { english: "dead", japanese: "しんだ" },
+            { english: "true", japanese: "ほんとうの" },
+            { english: "false", japanese: "いつわりの" },
+            { english: "same", japanese: "おなじ" },
+            { english: "different", japanese: "ことなる" },
+            { english: "next", japanese: "つぎの" },
+            { english: "last", japanese: "さいごの" },
+            { english: "first", japanese: "さいしょの" },
+            { english: "second", japanese: "2ばんめの" },
+            { english: "third", japanese: "3ばんめの" },
+            { english: "many", japanese: "おおくの" },
+            { english: "much", japanese: "おおくの" },
+            { english: "few", japanese: "しょうすうの" },
+            { english: "little", japanese: "しょうりょうの" },
+            { english: "all", japanese: "すべての" },
+            { english: "some", japanese: "いくつかの" },
+            { english: "any", japanese: "いくつかの" },
+            { english: "every", japanese: "すべての" },
+            { english: "no", japanese: "まったく～ない" },
+            { english: "one", japanese: "ひとつ" },
+            { english: "two", japanese: "ふたつ" },
+            { english: "three", japanese: "みっつ" },
+            { english: "four", japanese: "よっつ" },
+            { english: "five", japanese: "いつつ" },
+            { english: "six", japanese: "むっつ" },
+            { english: "seven", japanese: "ななつ" },
+            { english: "eight", japanese: "やっつ" },
+            { english: "nine", japanese: "ここのつ" },
+            { english: "ten", japanese: "とお" },
+            { english: "eleven", japanese: "じゅういち" },
+            { english: "twelve", japanese: "じゅうに" },
+            { english: "thirteen", japanese: "じゅうさん" },
+            { english: "fourteen", japanese: "じゅうし" },
+            { english: "fifteen", japanese: "じゅうご" },
+            { english: "sixteen", japanese: "じゅうろく" },
+            { english: "seventeen", japanese: "じゅうしち" },
+            { english: "eighteen", japanese: "じゅうはち" },
+            { english: "nineteen", japanese: "じゅうきゅう" },
+            { english: "twenty", japanese: "にじゅう" },
+            { english: "thirty", japanese: "さんじゅう" },
+            { english: "forty", japanese: "よんじゅう" },
+            { english: "fifty", japanese: "ごじゅう" },
+            { english: "sixty", japanese: "ろくじゅう" },
+            { english: "seventy", japanese: "ななじゅう" },
+            { english: "eighty", japanese: "はちじゅう" },
+            { english: "ninety", japanese: "きゅうじゅう" },
+            { english: "hundred", japanese: "ひゃく" },
+            { english: "thousand", japanese: "せん" },
+            { english: "million", japanese: "ひゃくまん" },
+            { english: "first", japanese: "さいしょの" },
+            { english: "second", japanese: "にばんめの" },
+            { english: "third", japanese: "さんばんめの" },
+            { english: "fourth", japanese: "よんばんめの" },
+            { english: "fifth", japanese: "ごばんめの" },
+            { english: "sixth", japanese: "ろくばんめの" },
+            { english: "seventh", japanese: "ななばんめの" },
+            { english: "eighth", japanese: "はちばんめの" },
+            { english: "ninth", japanese: "きゅうばんめの" },
+            { english: "tenth", japanese: "じゅうばんめの" },
+            { english: "January", japanese: "いちがつ" },
+            { english: "February", japanese: "にがつ" },
+            { english: "March", japanese: "さんがつ" },
+            { english: "April", japanese: "しがつ" },
+            { english: "May", japanese: "ごがつ" },
+            { english: "June", japanese: "ろくがつ" },
+            { english: "July", japanese: "しちがつ" },
+            { english: "August", japanese: "はちがつ" },
+            { english: "September", japanese: "くがつ" },
+            { english: "October", japanese: "じゅうがつ" },
+            { english: "November", japanese: "じゅういちがつ" },
+            { english: "December", japanese: "じゅうにがつ" },
+            { english: "Sunday", japanese: "にちようび" },
+            { english: "Monday", japanese: "げつようび" },
+            { english: "Tuesday", japanese: "かようび" },
+            { english: "Wednesday", japanese: "すいようび" },
+            { english: "Thursday", japanese: "もくようび" },
+            { english: "Friday", japanese: "きんようび" },
+            { english: "Saturday", japanese: "どようび" },
+            { english: "spring", japanese: "はる" },
+            { english: "summer", japanese: "なつ" },
+            { english: "autumn", japanese: "あき" },
+            { english: "winter", japanese: "ふゆ" },
+            { english: "north", japanese: "きた" },
+            { english: "south", japanese: "みなみ" },
+            { english: "east", japanese: "ひがし" },
+            { english: "west", japanese: "にし" },
+            { english: "up", japanese: "うえへ" },
+            { english: "down", japanese: "したへ" },
+            { english: "left", japanese: "ひだり" },
+            { english: "right", japanese: "みぎ" },
+            { english: "inside", japanese: "うちがわに" },
+            { english: "outside", japanese: "そとがわに" },
+            { english: "here", japanese: "ここ" },
+            { english: "there", japanese: "そこ" },
+            { english: "now", japanese: "いま" },
+            { english: "then", japanese: "そのとき" },
+            { english: "today", japanese: "きょう" },
+            { english: "yesterday", japanese: "きのう" },
+            { english: "tomorrow", japanese: "あした" },
+            { english: "always", japanese: "いつも" },
+            { english: "often", japanese: "しばしば" },
+            { english: "sometimes", japanese: "ときどき" },
+            { english: "never", japanese: "けっして～ない" },
+            { english: "usually", japanese: "たいてい" },
+            { english: "every day", japanese: "まいにち" },
+            { english: "once", japanese: "いちど" },
+            { english: "twice", japanese: "にど" },
+            { english: "three times", japanese: "さんど" },
+            { english: "very", japanese: "とても" },
+            { english: "too", japanese: "～すぎる" },
+            { english: "enough", japanese: "じゅうぶんな" },
+            { english: "also", japanese: "～もまた" },
+            { english: "too", japanese: "～もまた" },
+            { english: "either", japanese: "～もまた（ひていぶん）" },
+            { english: "but", japanese: "しかし" },
+            { english: "and", japanese: "そして" },
+            { english: "or", japanese: "または" },
+            { english: "so", japanese: "だから" },
+            { english: "because", japanese: "なぜなら" },
+            { english: "if", japanese: "もし～ならば" },
+            { english: "when", japanese: "～するとき" },
+            { english: "where", japanese: "～するところ" },
+            { english: "who", japanese: "だれ" },
+            { english: "what", japanese: "なに" },
+            { english: "which", japanese: "どちら" },
+            { english: "why", japanese: "なぜ" },
+            { english: "how", japanese: "どのように" },
+            { english: "this", japanese: "これ" },
+            { english: "that", japanese: "あれ" },
+            { english: "these", japanese: "これら" },
+            { english: "those", japanese: "あれら" },
+            { english: "I", japanese: "わたし" },
+            { english: "you", japanese: "あなた" },
+            { english: "he", japanese: "かれ" },
+            { english: "she", japanese: "かのじょ" },
+            { english: "it", japanese: "それ" },
+            { english: "we", japanese: "わたしたち" },
+            { english: "they", japanese: "かれら" },
+            { english: "my", japanese: "わたしの" },
+            { english: "your", japanese: "あなたの" },
+            { english: "his", japanese: "かれの" },
+            { english: "her", japanese: "かのじょの" },
+            { english: "its", japanese: "それの" },
+            { english: "our", japanese: "わたしたちの" },
+            { english: "their", japanese: "かれらの" },
+            { english: "me", japanese: "わたしを" },
+            { english: "him", japanese: "かれを" },
+            { english: "her", japanese: "かのじょを" },
+            { english: "us", japanese: "わたしたちを" },
+            { english: "them", japanese: "かれらを" },
+            { english: "mine", japanese: "わたしのもの" },
+            { english: "yours", japanese: "あなたのもの" },
+            { english: "his", japanese: "かれのもの" },
+            { english: "hers", japanese: "かのじょのもの" },
+            { english: "ours", japanese: "わたしたちのもの" },
+            { english: "theirs", japanese: "かれらのもの" },
+            { english: "am", japanese: "～です" },
+            { english: "is", japanese: "～です" },
+            { english: "are", japanese: "～です" },
+            { english: "was", japanese: "～でした" },
+            { english: "were", japanese: "～でした" },
+            { english: "have", japanese: "もっている" },
+            { english: "has", japanese: "もっている" },
+            { english: "had", japanese: "もっていた" },
+            { english: "do", japanese: "する" },
+            { english: "does", japanese: "する" },
+            { english: "did", japanese: "した" },
+            { english: "can", japanese: "～できる" },
+            { english: "could", japanese: "～できた" },
+            { english: "will", japanese: "～だろう" },
+            { english: "would", japanese: "～だろう（かこけい）" },
+            { english: "shall", japanese: "～しましょうか" },
+            { english: "should", japanese: "～すべきだ" },
+            { english: "may", japanese: "～かもしれない" },
+            { english: "might", japanese: "～かもしれない（かこけい）" },
+            { english: "must", japanese: "～しなければならない" },
+            { english: "about", japanese: "～について" },
+            { english: "above", japanese: "～のうえに" },
+            { english: "across", japanese: "～をよこぎって" },
+            { english: "after", japanese: "～のあとで" },
+            { english: "against", japanese: "～にはんたいして" },
+            { english: "among", japanese: "～のあいだに" },
+            { english: "around", japanese: "～のまわりに" },
+            { english: "at", japanese: "～に" },
+            { english: "before", japanese: "～のまえに" },
+            { english: "behind", japanese: "～のうしろに" },
+            { english: "below", japanese: "～のしたに" },
+            { english: "beneath", japanese: "～のしたに" },
+            { english: "beside", japanese: "～のそばに" },
+            { english: "between", japanese: "～のあいだに" },
+            { english: "beyond", japanese: "～をこえて" },
+            { english: "by", japanese: "～によって" },
+            { english: "down", japanese: "～のしたへ" },
+            { english: "during", japanese: "～のあいだ" },
+            { english: "except", japanese: "～をのぞいて" },
+            { english: "for", japanese: "～のために" },
+            { english: "from", japanese: "～から" },
+            { english: "in", japanese: "～のなかに" },
+            { english: "into", japanese: "～のなかへ" },
+            { english: "like", japanese: "～のように" },
+            { english: "near", japanese: "～のちかくに" },
+            { english: "of", japanese: "～の" },
+            { english: "off", japanese: "～からはなれて" },
+            { english: "on", japanese: "～のうえに" },
+            { english: "onto", japanese: "～のうえへ" },
+            { english: "opposite", japanese: "～のむかいに" },
+            { english: "out", japanese: "そとへ" },
+            { english: "outside", japanese: "～のそとに" },
+            { english: "over", japanese: "～のうえに" },
+            { english: "past", japanese: "～をすぎて" },
+            { english: "round", japanese: "～のまわりに" },
+            { english: "since", japanese: "～いらい" },
+            { english: "through", japanese: "～をとおりぬけて" },
+            { english: "to", japanese: "～へ" },
+            { english: "toward", japanese: "～のほうへ" },
+            { english: "under", japanese: "～のしたに" },
+            { english: "underneath", japanese: "～のしたに" },
+            { english: "until", japanese: "～まで" },
+            { english: "up", japanese: "～のうえへ" },
+            { english: "upon", japanese: "～のうえに" },
+            { english: "with", japanese: "～といっしょに" },
+            { english: "within", japanese: "～いないに" },
+            { english: "without", japanese: "～なしで" },
+            { english: "a", japanese: "ひとつの" },
+            { english: "an", japanese: "ひとつの" },
+            { english: "the", japanese: "その" },
+            { english: "and", japanese: "そして" },
+            { english: "but", japanese: "しかし" },
+            { english: "or", japanese: "または" },
+            { english: "so", japanese: "だから" },
+            { english: "because", japanese: "なぜなら" },
+            { english: "if", japanese: "もし～ならば" },
+            { english: "when", japanese: "～するとき" },
+            { english: "where", japanese: "～するところ" },
+            { english: "while", japanese: "～のあいだ" },
+            { english: "although", japanese: "～だけれども" },
+            { english: "though", japanese: "～だけれども" },
+            { english: "unless", japanese: "～しないかぎり" },
+            { english: "until", japanese: "～まで" },
+            { english: "as", japanese: "～として" },
+            { english: "than", japanese: "～より" },
+            { english: "that", japanese: "～ということ" },
+            { english: "what", japanese: "～すること" },
+            { english: "which", japanese: "～する（かんけいだいめいし）" },
+            { english: "who", japanese: "～する（かんけいだいめいし）" },
+            { english: "whose", japanese: "～の（かんけいだいめいし）" },
+            { english: "whom", japanese: "～を（かんけいだいめいし）" },
+            { english: "where", japanese: "～するばしょ" },
+            { english: "when", japanese: "～するとき" },
+            { english: "why", japanese: "～するりゆう" },
+            { english: "how", japanese: "～するほうほう" },
+            { english: "after", japanese: "～のあとで" },
+            { english: "before", japanese: "～のまえに" },
+            { english: "since", japanese: "～いらい" },
+            { english: "until", japanese: "～まで" },
+            { english: "while", japanese: "～のあいだ" },
+            { english: "as soon as", japanese: "～するとすぐに" },
+            { english: "as long as", japanese: "～するかぎり" },
+            { english: "even if", japanese: "たとえ～でも" },
+            { english: "even though", japanese: "たとえ～でも" },
+            { english: "in order to", japanese: "～するために" },
+            { english: "so that", japanese: "～するために" },
+            { english: "such as", japanese: "～のような" },
+            { english: "as well as", japanese: "～とどうように" },
+            { english: "instead of", japanese: "～のかわりに" },
+            { english: "because of", japanese: "～のために" },
+            { english: "due to", japanese: "～のために" },
+            { english: "thanks to", japanese: "～のおかげで" },
+            { english: "according to", japanese: "～によると" },
+            { english: "in front of", japanese: "～のまえに" },
+            { english: "next to", japanese: "～のとなりに" },
+            { english: "on top of", japanese: "～のうえに" },
+            { english: "underneath", japanese: "～のしたに" },
+            { english: "outside of", japanese: "～のそとに" },
+            { english: "inside of", japanese: "～のなかに" },
+            { english: "far from", japanese: "～からとおい" },
+            { english: "close to", japanese: "～にちかい" },
+            { english: "a lot of", japanese: "たくさんの" },
+            { english: "lots of", japanese: "たくさんの" },
+            { english: "plenty of", japanese: "たくさんの" },
+            { english: "a few", japanese: "しょうすうの" },
+            { english: "a little", japanese: "しょうりょうの" },
+            { english: "many", japanese: "おおくの" },
+            { english: "much", japanese: "おおくの" },
+            { english: "some", japanese: "いくつかの" },
+            { english: "any", japanese: "いくつかの" },
+            { english: "no", japanese: "まったく～ない" },
+            { english: "every", japanese: "すべての" },
+            { english: "each", japanese: "それぞれの" },
+            { english: "both", japanese: "りょうほう" },
+            { english: "either", japanese: "どちらか" },
+            { english: "neither", japanese: "どちらも～ない" },
+            { english: "all", japanese: "すべての" },
+            { english: "half", japanese: "はんぶん" },
+            { english: "whole", japanese: "ぜんたいの" },
+            { english: "another", japanese: "もうひとつの" },
+            { english: "other", japanese: "ほかの" },
+            { english: "such", japanese: "そのような" },
+            { english: "same", japanese: "おなじ" },
+            { english: "different", japanese: "ことなる" },
+            { english: "new", japanese: "あたらしい" },
+            { english: "old", japanese: "ふるい" },
+            { english: "young", japanese: "わかい" },
+            { english: "big", japanese: "おおきい" },
+            { english: "small", japanese: "ちいさい" },
+            { english: "long", japanese: "ながい" },
+            { english: "short", japanese: "みじかい" },
+            { english: "tall", japanese: "せがたかい" },
+            { english: "low", japanese: "ひくい" },
+            { english: "high", japanese: "たかい" },
+            { english: "wide", japanese: "ひろい" },
+            { english: "narrow", japanese: "せまい" },
+            { english: "thick", japanese: "あつい" },
+            { english: "thin", japanese: "うすい" },
+            { english: "heavy", japanese: "おもい" },
+            { english: "light", japanese: "かるい" },
+            { english: "good", japanese: "よい" },
+            { english: "bad", japanese: "わるい" },
+            { english: "beautiful", japanese: "うつくしい" },
+            { english: "ugly", japanese: "みにくい" },
+            { english: "kind", japanese: "しんせつな" },
+            { english: "mean", japanese: "いじわるな" },
+            { english: "happy", japanese: "しあわせな" },
+            { english: "sad", japanese: "かなしい" },
+            { english: "angry", japanese: "おこっている" },
+            { english: "hungry", japanese: "くうふくな" },
+            { english: "thirsty", japanese: "のどがかわいた" },
+            { english: "sleepy", japanese: "ねむい" },
+            { english: "tired", japanese: "つかれた" },
+            { english: "sick", japanese: "びょうきの" },
+            { english: "well", japanese: "けんこうな" },
+            { english: "busy", japanese: "いそがしい" },
+            { english: "free", japanese: "ひまな" },
+            { english: "early", japanese: "はやい" },
+            { english: "late", japanese: "おそい" },
+            { english: "fast", japanese: "はやい" },
+            { english: "slow", japanese: "おそい" },
+            { english: "easy", japanese: "かんたんな" },
+            { english: "difficult", japanese: "むずかしい" },
+            { english: "important", japanese: "じゅうような" },
+            { english: "necessary", japanese: "ひつような" },
+            { english: "possible", japanese: "かのうな" },
+            { english: "impossible", japanese: "ふかのうな" },
+            { english: "true", japanese: "ほんとうの" },
+            { english: "false", japanese: "いつわりの" },
+            { english: "right", japanese: "ただしい" },
+            { english: "wrong", japanese: "まちがった" },
+            { english: "ready", japanese: "じゅんびができた" },
+            { english: "sure", japanese: "かくしんしている" },
+            { english: "afraid", japanese: "おそれて" },
+            { english: "excited", japanese: "こうふんした" },
+            { english: "surprised", japanese: "おどろいた" },
+            { english: "interested", japanese: "きょうみがある" },
+            { english: "boring", japanese: "たいくつな" },
+            { english: "amazing", japanese: "おどろくべき" },
+            { english: "great", japanese: "すばらしい" },
+            { english: "fine", japanese: "げんきな" },
+            { english: "cool", japanese: "かっこいい" },
+            { english: "warm", japanese: "あたたかい" },
+            { english: "cold", japanese: "さむい" },
+            { english: "hot", japanese: "あつい" },
+            { english: "sunny", japanese: "はれの" },
+            { english: "cloudy", japanese: "くもりの" },
+            { english: "rainy", japanese: "あめの" },
+            { english: "snowy", japanese: "ゆきの" },
+            { english: "windy", japanese: "かぜのつよい" },
+            { english: "clear", japanese: "はれた" },
+            { english: "dark", japanese: "くらい" },
+            { english: "bright", japanese: "あかるい" },
+            { english: "loud", japanese: "うるさい" },
+            { english: "quiet", japanese: "しずかな" },
+            { english: "clean", japanese: "きれいな" },
+            { english: "dirty", japanese: "きたない" },
+            { english: "empty", japanese: "からの" },
+            { english: "full", japanese: "まんぱいの" },
+            { english: "open", japanese: "あいている" },
+            { english: "closed", japanese: "とじている" },
+            { english: "free", japanese: "じゆうな" },
+            { english: "busy", japanese: "いそがしい" },
+            { english: "alone", japanese: "ひとりで" },
+            { english: "together", japanese: "いっしょに" },
+            { english: "different", japanese: "ことなる" },
+            { english: "same", japanese: "おなじ" },
+            { english: "next", japanese: "つぎの" },
+            { english: "last", japanese: "さいごの" },
+            { english: "first", japanese: "さいしょの" },
+            { english: "only", japanese: "ゆいいつの" },
+            { english: "main", japanese: "しゅような" },
+            { english: "real", japanese: "ほんとうの" },
+            { english: "fake", japanese: "にせの" },
+            { english: "true", japanese: "ほんとうの" },
+            { english: "false", japanese: "いつわりの" },
+            { english: "public", japanese: "こうきょうの" },
+            { english: "private", japanese: "してきな" },
+            { english: "common", japanese: "きょうつうの" },
+            { english: "special", japanese: "とくべつな" },
+            { english: "general", japanese: "いっぱんてきな" },
+            { english: "specific", japanese: "ぐたいてきな" },
+            { english: "normal", japanese: "ふつうの" },
+            { english: "unusual", japanese: "めずらしい" },
+            { english: "simple", japanese: "たんじゅんな" },
+            { english: "complex", japanese: "ふくざつな" },
+            { english: "easy", japanese: "かんたんな" },
+            { english: "difficult", japanese: "むずかしい" },
+            { english: "possible", japanese: "かのうな" },
+            { english: "impossible", japanese: "ふかのうな" },
+            { english: "safe", japanese: "あんぜんな" },
+            { english: "dangerous", japanese: "きけんな" },
+            { english: "healthy", japanese: "けんこうな" },
+            { english: "unhealthy", japanese: "ふけんこうな" },
+            { english: "strong", japanese: "つよい" },
+            { english: "weak", japanese: "よわい" },
+            { english: "loud", japanese: "うるさい" },
+            { english: "quiet", japanese: "しずかな" }
+        ];
+
+        let currentWordIndex; // To keep track of the current word
+        let shuffledWords = []; // To store shuffled words for the quiz session
+
+        const wordDisplay = document.getElementById('wordDisplay');
+        const answerInput = document.getElementById('answerInput');
+        const feedback = document.getElementById('feedback');
+        const checkButton = document.getElementById('checkButton');
+        const nextButton = document.getElementById('nextButton');
+        const playAudioButton = document.getElementById('playAudioButton');
+
+        /**
+         * Converts katakana and kanji to hiragana.
+         * This is a simplified conversion and may not cover all edge cases or complex kanji.
+         * For a robust solution, a dedicated Japanese text processing library would be needed.
+         * @param {string} text The Japanese text to convert.
+         * @returns {string} The converted hiragana text.
+         */
+        function toHiragana(text) {
+            return text.replace(/[\u30a0-\u30ff]/g, function(chr) {
+                return String.fromCharCode(chr.charCodeAt(0) - 0x60);
+            }).replace(/[一-龠]/g, function(chr) {
+                // This is a very basic and incomplete kanji to hiragana conversion.
+                // For full functionality, a more advanced library or API is required.
+                // Here, we just return the original kanji if no simple mapping is available.
+                const kanjiMap = {
+                    '本': 'ほん', '学校': 'がっこう', '生徒': 'せいと', '先生': 'せんせい',
+                    '猫': 'ねこ', '犬': 'いぬ', '家': 'いえ', '水': 'みず', '食べる': 'たべる',
+                    '飲む': 'のむ', '走る': 'はしる', '勉強する': 'べんきょうする', '遊ぶ': 'あそぶ',
+                    '友達': 'ともだち', '朝': 'あさ', '夕方': 'ゆうがた', '夜': 'よる', '日': 'ひ',
+                    '幸せな': 'しあわせな', '悲しい': 'かなしい', '大きい': 'おおきい', '小さい': 'ちいさい',
+                    '新しい': 'あたらしい', '古い': 'ふるい', '好き': 'すき', '愛する': 'あいする',
+                    '欲しい': 'ほしい', '行く': 'いく', '来る': 'くる', '見る': 'みる', '聞く': 'きく',
+                    '話す': 'はなす', '読む': 'よむ', '書く': 'かく', '歩く': 'あるく', '考える': 'かんがえる',
+                    '知っている': 'しっている', '作る': 'つくる', '取る': 'とる', '与える': 'あたえる',
+                    '得る': 'える', '使う': 'つかう', '見つける': 'みつける', '伝える': 'つたえる',
+                    '尋ねる': 'たずねる', '働く': 'はたらく', '住む': 'すむ', '開ける': 'あける',
+                    '閉める': 'しめる', '始める': 'はじめる', '終える': 'おえる', '買う': 'かう',
+                    '売る': 'うる', '持ってくる': 'もってくる', '送る': 'おくる', '見せる': 'みせる',
+                    '学ぶ': 'まなぶ', '教える': 'おしえる', '助ける': 'たすける', '呼ぶ': 'よぶ',
+                    '待つ': 'まつ', '変える': 'かえる', '動かす': 'うごかす', '回る': 'まわる',
+                    '立つ': 'たつ', '座る': 'すわる', '眠る': 'ねむる', '起きる': 'おきる',
+                    '洗う': 'あらう', 'きれいにする': 'きれいにする', '料理する': 'りょうりする',
+                    '切る': 'きる', '描く': 'えがく', '歌う': 'うたう', '踊る': 'おどる',
+                    '泳ぐ': 'およぐ', '運転する': 'うんてんする', '乗る': 'のる', '飛ぶ': 'とぶ',
+                    '会う': 'あう', '訪れる': 'おとずれる', '旅行する': 'りょこうする', '滞在する': 'たいざいする',
+                    '感じる': 'かんじる', '聞こえる': 'きこえる', '味がする': 'あじがする',
+                    '匂いがする': 'においがする', '触る': 'さわる', '置く': 'おく', '持つ': 'もつ',
+                    '保つ': 'たもつ', '去る': 'さる', '失う': 'うしなう', '勝つ': 'かつ',
+                    '負ける': 'まける', '捕まえる': 'つかまえる', '投げる': 'なげる', '打つ': 'うつ',
+                    '蹴る': 'ける', '跳ぶ': 'とぶ', '登る': 'のぼる', '落ちる': 'おちる',
+                    '壊す': 'こわす', '修理する': 'しゅうりする', '建てる': 'たてる', '破壊する': 'はかいする',
+                    '創造する': 'そうぞうする', '加える': 'くわえる', '引く': 'ひく', '掛ける': 'かける',
+                    '割る': 'わる', '数える': 'かぞえる', '測る': 'はかる', '説明する': 'せつめいする',
+                    '描写する': 'びょうしゃする', '覚えている': 'おぼえている', '忘れる': 'わすれる',
+                    '理解する': 'りかいする', '信じる': 'しんじる', '望む': 'のぞむ', '願う': 'ねがう',
+                    '夢を見る': 'ゆめをみる', '計画する': 'けいかくする', '決める': 'きめる',
+                    '選ぶ': 'えらぶ', '同意する': 'どういする', '同意しない': 'どういしない',
+                    '受け入れる': 'うけいれる', '拒否する': 'きょひする', '許す': 'ゆるす',
+                    '禁じる': 'きんじる', '借りる': 'かりる', '貸す': 'かす', '支払う': 'しはらう',
+                    '費用がかかる': 'ひようがかかる', '費やす': 'ついやす', '貯める': 'ためる',
+                    '無駄にする': 'むだにする', '稼ぐ': 'かせぐ', '集める': 'あつめる',
+                    '共有する': 'きょうゆうする', '混ぜる': 'まぜる', '分ける': 'わける',
+                    '加わる': 'くわわる', 'つなぐ': 'つなぐ', 'つなぐのをやめる': 'つなぐのをやめる',
+                    '押す': 'おす', '引く': 'ひく', '運ぶ': 'はこぶ' , '着る': 'きる',
+                    '脱ぐ': 'ぬぐ', '試着する': 'しちゃくする', '乾かす': 'かわかす',
+                    'アイロンをかける': 'アイロンをかける', 'たたむ': 'たたむ', '掛ける': 'かける',
+                    'きれいな': 'きれいな', '汚い': 'きたない', '空の': 'からの', '満杯の': 'まんぱいの',
+                    '重い': 'おもい', '軽い': 'かるい', '長い': 'ながい', '短い': 'みじかい',
+                    '背が高い': 'せがたかい', '低い': 'ひくい', '広い': 'ひろい', '狭い': 'せまい',
+                    '厚い': 'あつい', '薄い': 'うすい', '深い': 'ふかい', '浅い': 'あさい',
+                    '暑い': 'あつい', '寒い': 'さむい', '暖かい': 'あたたかい', '涼しい': 'すずしい',
+                    '明るい': 'あかるい', '暗い': 'くらい', 'うるさい': 'うるさい', '静かな': 'しずかな' ,
+                    '速い': 'はやい', '遅い': 'おそい', '早い': 'はやい', '簡単な': 'かんたんな',
+                    '難しい': 'むずかしい', '良い': 'よい', '悪い': 'わるい', '美しい': 'うつくしい',
+                    '醜い': 'みにくい', '親切な': 'しんせつな', '意地悪な': 'いじわるな',
+                    '丁寧な': 'ていねいな', '失礼な': 'しつれいな', '賢い': 'かしこい',
+                    '愚かな': 'おろかな', '強い': 'つよい', '弱い': 'よわい', '裕福な': 'ゆうふくな',
+                    '貧しい': 'まずしい', '若い': 'わかい', '年老いた': 'としおいた',
+                    '生きている': 'いきている', '死んだ': 'しんだ', '本当の': 'ほんとうの',
+                    '偽りの': 'いつわりの', '同じ': 'おなじ', '異なる': 'ことなる', '次の': 'つぎの',
+                    '最後の': 'さいごの', '最初の': 'さいしょの', '2番目の': 'にばんめの',
+                    '3番目の': 'さんばんめの', '多くの': 'おおくの', '少数の': 'しょうすうの',
+                    '少量の': 'しょうりょうの', '全ての': 'すべての', 'いくつかの': 'いくつかの',
+                    '全くない': 'まったく～ない', 'それぞれの': 'それぞれの', '両方': 'りょうほう',
+                    'どちらか': 'どちらか', 'どちらも～ない': 'どちらも～ない', '半分': 'はんぶん',
+                    '全体の': 'ぜんたいの', 'もう一つの': 'もうひとつの', '他の': 'ほかの',
+                    'そのような': 'そのような', '公共の': 'こうきょうの', '私的な': 'してきな',
+                    '共通の': 'きょうつうの', '特別な': 'とくべつな', '一般的な': 'いっぱんてきな',
+                    '具体的な': 'ぐたいてきな', '普通の': 'ふつうの', '珍しい': 'めずらしい',
+                    '単純な': 'たんじゅんな', '複雑な': 'ふくざつな', '可能な': 'かのうな',
+                    '不可能な': 'ふかのうな', '安全な': 'あんぜんな', '危険な': 'きけんな',
+                    '健康な': 'けんこうな', '不健康な': 'ふけんこうな', '怒っている': 'おこっている',
+                    '空腹な': 'くうふくな', '喉が渇いた': 'のどがかわいた', '眠い': 'ねむい',
+                    '疲れた': 'つかれた', '病気の': 'びょうきの', '健康な': 'けんこうな',
+                    '忙しい': 'いそがしい', '暇な': 'ひまな', '正しい': 'ただしい',
+                    '間違った': 'まちがった', '準備ができた': 'じゅんびができた', '確信している': 'かくしんしている',
+                    '恐れて': 'おそれて', '興奮した': 'こうふんした', '驚いた': 'おどろいた',
+                    '興味がある': 'きょうみがある', '退屈な': 'たいくつな', '驚くべき': 'おどろくべき',
+                    '素晴らしい': 'すばらしい', '元気な': 'げんきな', 'かっこいい': 'かっこいい',
+                    '晴れの': 'はれの', '曇りの': 'くもりの', '雨の': 'あめの', '雪の': 'ゆきの',
+                    '風の強い': 'かぜのつよい', '晴れた': 'はれた', '開いている': 'あいている',
+                    '閉じている': 'とじている', '自由な': 'じゆうな', '一人で': 'ひとりで',
+                    '一緒に': 'いっしょに', '唯一の': 'ゆいいつの', '主要な': 'しゅような',
+                    '偽の': 'にせの', 'より良い': 'よりよい', '最高の': 'さいこうの',
+                    'より悪い': 'よりわるい', '最悪の': 'さいあくの', 'もっと多くの': 'もっとおおくの',
+                    '最も多くの': 'もっともおおくの', 'より少ない': 'よりすくない', '最も少ない': 'もっともすくない'
+                };
+                return kanjiMap[chr] || chr; // Return hiragana if mapped, otherwise original kanji
+            });
+        }
+
+
+        /**
+         * Shuffles an array using the Fisher-Yates (Knuth) shuffle algorithm.
+         * @param {Array} array The array to shuffle.
+         * @returns {Array} The shuffled array.
+         */
+        function shuffleArray(array) {
+            for (let i = array.length - 1; i > 0; i--) {
+                const j = Math.floor(Math.random() * (i + 1));
+                [array[i], array[j]] = [array[j], array[i]]; // Swap elements
+            }
+            return array;
+        }
+
+        /**
+         * Initializes the quiz by shuffling words and displaying the first one.
+         */
+        function initializeQuiz() {
+            shuffledWords = shuffleArray([...words]); // Create a shallow copy and shuffle
+            currentWordIndex = 0;
+            displayWord();
+            feedback.textContent = ''; // Clear any previous feedback
+            answerInput.value = ''; // Clear input field
+            answerInput.focus(); // Focus on the input field
+            checkButton.disabled = false; // Enable check button
+            nextButton.disabled = true; // Disable next button initially
+            playAudioButton.disabled = false; // Enable play audio button
+        }
+
+        /**
+         * Displays the current English word.
+         */
+        function displayWord() {
+            if (currentWordIndex < shuffledWords.length) {
+                wordDisplay.textContent = shuffledWords[currentWordIndex].english;
+                // Remove pulse animation after displaying new word, then add it back for next word
+                wordDisplay.classList.remove('animate-pulse');
+                setTimeout(() => {
+                    wordDisplay.classList.add('animate-pulse');
+                }, 100);
+            } else {
+                // All words have been tested
+                wordDisplay.textContent = "テスト終了！"; // Changed to Kanji
+                feedback.textContent = "お疲れ様でした！もう一度挑戦しますか？"; // Changed to Kanji
+                checkButton.disabled = true;
+                nextButton.textContent = "最初から"; // Changed to Kanji
+                nextButton.disabled = false;
+                playAudioButton.disabled = true; // Disable play audio button when quiz ends
+            }
+        }
+
+        /**
+         * Speaks the current English word using the Web Speech API.
+         */
+        function speakWord() {
+            if ('speechSynthesis' in window) {
+                const wordToSpeak = shuffledWords[currentWordIndex].english;
+                const utterance = new SpeechSynthesisUtterance(wordToSpeak);
+                utterance.lang = 'en-US'; // Set language to English (US)
+                window.speechSynthesis.speak(utterance);
+            } else {
+                console.warn('Web Speech API (SpeechSynthesis) is not supported in this browser.');
+                // Optionally, provide a visual feedback to the user that audio is not supported
+                feedback.textContent = "音声再生は、このブラウザではサポートされていません。";
+                feedback.className = "text-lg font-semibold mb-6 text-orange-600
+            }
+        }
+
+        /**
+         * Checks the user's answer against the correct Japanese meaning.
+         */
+        function checkAnswer() {
+            if (currentWordIndex >= shuffledWords.length) {
+                // Quiz finished, do nothing or reset
+                return;
+            }
+
+            // Convert both user answer and correct answer to hiragana for comparison
+            const userAnswerHiragana = toHiragana(answerInput.value.trim());
+            const correctAnswerHiragana = toHiragana(shuffledWords[currentWordIndex].japanese);
+
+            if (userAnswerHiragana === correctAnswerHiragana) {
+                feedback.textContent = "正解！🎉"; // Changed to Kanji
+                feedback.className = "text-lg font-semibold mb-6 text-green-600";
+            } else {
+                feedback.textContent = `不正解... 正解は「${correctAnswerHiragana}」でした。`; // Changed to Kanji
+                feedback.className = "text-lg font-semibold mb-6 text-red-600";
+            }
+            checkButton.disabled = true; // Disable check button after checking
+            nextButton.disabled = false; // Enable next button
+            answerInput.blur(); // Remove focus from input after checking
+        }
+
+        /**
+         * Moves to the next word in the quiz.
+         */
+        function nextWord() {
+            if (currentWordIndex < shuffledWords.length - 1) {
+                currentWordIndex++;
+                displayWord();
+                feedback.textContent = ''; // Clear feedback
+                answerInput.value = ''; // Clear input
+                answerInput.focus(); // Focus on new input
+                checkButton.disabled = false; // Enable check button
+                nextButton.disabled = true; // Disable next button
+                playAudioButton.disabled = false; // Enable play audio button for the new word
+            } else {
+                // If it's the last word and "Next Word" is clicked, it means quiz is ending or resetting
+                initializeQuiz(); // Restart the quiz
+                nextButton.textContent = "次の単語"; // Changed to Kanji
+            }
+        }
+
+        // Initialize the quiz when the page loads
+        window.onload = initializeQuiz;
+    </script>
+</body>
+</html>
